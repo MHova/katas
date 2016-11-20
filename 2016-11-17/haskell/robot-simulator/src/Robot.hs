@@ -1,3 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Robot
     ( Bearing(East,North,South,West)
     , Robot
@@ -25,14 +27,21 @@ data Robot = Robot
 bearing :: Robot -> Bearing
 bearing = rBearing
 
-coordinates :: Robot -> (Integer, Integer)
+coordinates :: Robot -> Coordinates
 coordinates = rCoord
 
-mkRobot :: Bearing -> (Integer, Integer) -> Robot
+mkRobot :: Bearing -> Coordinates -> Robot
 mkRobot = Robot
 
 simulate :: Robot -> String -> Robot
-simulate = undefined
+simulate = foldl parse
+  where
+    parse r 'R' = goRight r
+    parse r 'L' = goLeft r
+    parse r 'A' = advance r
+    parse _ x = error [x]
+    goLeft r@Robot{rBearing} = r{rBearing = turnLeft rBearing}
+    goRight r@Robot{rBearing} = r{rBearing = turnRight rBearing}
 
 turnLeft :: Bearing -> Bearing
 turnLeft North = West
@@ -42,3 +51,10 @@ turnLeft West = South
 
 turnRight :: Bearing -> Bearing
 turnRight = turnLeft . turnLeft . turnLeft
+
+advance :: Robot -> Robot
+advance r@(Robot North (x,y)) = r{rCoord = (x, y+1)}
+advance r@(Robot East (x,y)) = r{rCoord = (x+1, y)}
+advance r@(Robot South (x,y)) = r{rCoord = (x, y-1)}
+advance r@(Robot West (x,y)) = r{rCoord = (x-1, y)}
+
