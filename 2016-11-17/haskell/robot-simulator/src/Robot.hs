@@ -35,7 +35,10 @@ simulate :: Robot -> String -> Robot
 simulate = undefined
 
 turnLeft :: Bearing -> Bearing
-turnLeft = undefined
+turnLeft North = West
+turnLeft East = North
+turnLeft South = East
+turnLeft West = South
 
 turnRight :: Bearing -> Bearing
-turnRight = undefined
+turnRight = turnLeft . turnLeft . turnLeft
