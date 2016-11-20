@@ -1,5 +1,6 @@
 module Robot
     ( Bearing(East,North,South,West)
+    , Robot
     , bearing
     , coordinates
     , mkRobot
@@ -14,14 +15,21 @@ data Bearing = North
              | West
              deriving (Eq, Show)
 
+type Coordinates = (Integer, Integer)
+
+data Robot = Robot 
+  { rBearing :: Bearing
+  , rCoord :: Coordinates
+  }
+
 bearing :: Robot -> Bearing
-bearing = undefined
+bearing = rBearing
 
 coordinates :: Robot -> (Integer, Integer)
-coordinates = undefined
+coordinates = rCoord
 
 mkRobot :: Bearing -> (Integer, Integer) -> Robot
-mkRobot = undefined
+mkRobot = Robot
 
 simulate :: Robot -> String -> Robot
 simulate = undefined
