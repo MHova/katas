@@ -5,11 +5,10 @@ module Lib
     ( startApp
     ) where
 
-import Data.Aeson
-import Data.Aeson.TH
-import Network.Wai
-import Network.Wai.Handler.Warp
-import Servant
+import Data.Aeson.TH (deriveJSON, defaultOptions)
+import Network.Wai (Application)
+import Network.Wai.Handler.Warp (run)
+import Servant ((:>), Get, JSON, Proxy(Proxy), Server, serve)
 
 data User = User
   { userId        :: Int
