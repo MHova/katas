@@ -7,12 +7,11 @@ import Data.Maybe(isJust)
 
 type Equipment = String
 
-data Status = Dead | Alive Int
+data DeadSurvivor = DeadSurvivor
 
-data Survivor =
-  Survivor
+data LivingSurvivor = LivingSurvivor
   { name :: String
-  , status :: Status
+  , wounds :: Int
   , actions :: Int
   , leftHand :: Maybe Equipment
   , rightHand :: Maybe Equipment
@@ -20,44 +19,49 @@ data Survivor =
   , capacity :: Int
   }
 
-initialSurvivor :: String -> Survivor
-initialSurvivor n = Survivor n (Alive 0) 3 Nothing Nothing [] 5
+data Survivor = Dead DeadSurvivor | Living LivingSurvivor
 
-pickup :: Equipment -> Survivor -> Survivor
+corpse :: Survivor
+corpse = Dead DeadSurvivor
+
+initialSurvivor :: String -> Survivor
+initialSurvivor n = Living $ LivingSurvivor n 0 3 Nothing Nothing [] 5
+
+pickup :: Equipment -> LivingSurvivor -> LivingSurvivor
 pickup e survivor = if canHoldMore survivor then equip survivor else survivor
   where
-    equip s@Survivor{leftHand = Nothing}= s{leftHand = Just e}
-    equip s@Survivor{rightHand = Nothing}= s{rightHand = Just e}
-    equip s@Survivor{reserve}= s{reserve = e:reserve}
+    equip s@LivingSurvivor{leftHand = Nothing}= s{leftHand = Just e}
+    equip s@LivingSurvivor{rightHand = Nothing}= s{rightHand = Just e}
+    equip s@LivingSurvivor{reserve}= s{reserve = e:reserve}
 
-canHoldMore :: Survivor -> Bool
-canHoldMore s@Survivor{capacity} = numEquip s < capacity
+canHoldMore :: LivingSurvivor -> Bool
+canHoldMore s@LivingSurvivor{capacity} = numEquip s < capacity
 
-needsToDrop :: Survivor -> Bool
-needsToDrop s@Survivor{capacity} = numEquip s > capacity
+needsToDrop :: LivingSurvivor -> Bool
+needsToDrop s@LivingSurvivor{capacity} = numEquip s > capacity
 
-numEquip :: Survivor -> Int
-numEquip Survivor{leftHand, rightHand, reserve} = length reserve + length (filter isJust [leftHand, rightHand])
+numEquip :: LivingSurvivor -> Int
+numEquip LivingSurvivor{leftHand, rightHand, reserve} = length reserve + length (filter isJust [leftHand, rightHand])
 
-dropEquipment :: Survivor -> Survivor
-dropEquipment s@Survivor{reserve = _:es} = s{reserve = es}
-dropEquipment s@Survivor{leftHand = Just _} = s{leftHand = Nothing}
-dropEquipment s@Survivor{rightHand = Just _} = s{rightHand = Nothing}
+dropEquipment :: LivingSurvivor -> LivingSurvivor
+dropEquipment s@LivingSurvivor{reserve = _:es} = s{reserve = es}
+dropEquipment s@LivingSurvivor{leftHand = Just _} = s{leftHand = Nothing}
+dropEquipment s@LivingSurvivor{rightHand = Just _} = s{rightHand = Nothing}
 dropEquipment s = s
 
 woundOnce :: Survivor -> Survivor
-woundOnce s@Survivor{status = Dead} = s
-woundOnce s@Survivor{status = Alive wounds, capacity}
-  | newWounds >= 2 = s{status = Dead}
+woundOnce (Dead _) = corpse
+woundOnce (Living ls@LivingSurvivor{wounds, capacity})
+  | newWounds >= 2 = corpse
   | otherwise =
-    let res = s{status = Alive newWounds, capacity = newCapacity}
-    in if needsToDrop res then dropEquipment res else res
+    let wounded = ls{wounds = newWounds, capacity = newCapacity}
+    in if needsToDrop wounded then Living (dropEquipment wounded) else Living wounded
   where
     newWounds = wounds + 1
     newCapacity = capacity - 1
 
-wound :: Survivor -> Int -> Survivor
-wound s numWounds = foldl (\b a -> a b) s (replicate numWounds woundOnce)
+wound :: LivingSurvivor -> Int -> Survivor
+wound s numWounds = foldl (\b a -> a b) (Living s) (replicate numWounds woundOnce)
 
 main :: IO ()
 main = putStrLn "hello world"
