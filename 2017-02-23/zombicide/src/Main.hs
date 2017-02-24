@@ -4,13 +4,25 @@ module Main where
 
 import Data.Maybe(isJust)
 
+newtype RunningGame = RunningGame
+  { survivors :: [Survivor] }
+data EndedGame = EndedGame
+data Game = Running RunningGame | Ended EndedGame
+
+newGame :: Game
+newGame = Running $ RunningGame []
+
+addSurvivor :: String -> RunningGame -> RunningGame
+addSurvivor name g@RunningGame{survivors}
+  | name `elem` map getName survivors = g
+  | otherwise = g{survivors = newSurvivor name:survivors}
 
 type Equipment = String
 
-data DeadSurvivor = DeadSurvivor
-
+newtype DeadSurvivor = DeadSurvivor
+  { dname :: String}
 data LivingSurvivor = LivingSurvivor
-  { name :: String
+  { lname :: String
   , wounds :: Int
   , actions :: Int
   , leftHand :: Maybe Equipment
@@ -18,14 +30,17 @@ data LivingSurvivor = LivingSurvivor
   , reserve :: [Equipment]
   , capacity :: Int
   }
-
 data Survivor = Dead DeadSurvivor | Living LivingSurvivor
 
-corpse :: Survivor
-corpse = Dead DeadSurvivor
+getName :: Survivor -> String
+getName (Dead DeadSurvivor{dname}) = dname
+getName (Living LivingSurvivor{lname}) = lname
 
-initialSurvivor :: String -> Survivor
-initialSurvivor n = Living $ LivingSurvivor n 0 3 Nothing Nothing [] 5
+corpse :: String -> Survivor
+corpse name = Dead $ DeadSurvivor name
+
+newSurvivor :: String -> Survivor
+newSurvivor n = Living $ LivingSurvivor n 0 3 Nothing Nothing [] 5
 
 pickup :: Equipment -> LivingSurvivor -> LivingSurvivor
 pickup e survivor = if canHoldMore survivor then equip survivor else survivor
@@ -50,9 +65,9 @@ dropEquipment s@LivingSurvivor{rightHand = Just _} = s{rightHand = Nothing}
 dropEquipment s = s
 
 woundOnce :: Survivor -> Survivor
-woundOnce (Dead _) = corpse
-woundOnce (Living ls@LivingSurvivor{wounds, capacity})
-  | newWounds >= 2 = corpse
+woundOnce dead@(Dead _) = dead
+woundOnce (Living ls@LivingSurvivor{lname, wounds, capacity})
+  | newWounds >= 2 = corpse lname
   | otherwise =
     let wounded = ls{wounds = newWounds, capacity = newCapacity}
     in if needsToDrop wounded then Living (dropEquipment wounded) else Living wounded
